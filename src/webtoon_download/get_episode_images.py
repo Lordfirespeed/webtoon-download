@@ -1,8 +1,5 @@
 import asyncio
-import tempfile
-from copy import replace
 
-from aiopath import AsyncPath
 from yarl import URL
 from bs4 import BeautifulSoup
 
@@ -40,7 +37,9 @@ async def download_page_image(page: EpisodePage, context: AppContext) -> Episode
     if page.path is not None and await page.path.exists():
         return page
 
-    destination = context.ephemeral_dir / page.url.name
+    assert page.episode.series.slug
+
+    destination = context.ephemeral_dir / f"{page.episode.series.slug}-ep{page.episode.index:03}-page{page.index:03}{page.url.suffix}"
     query = dict(page.url.query)
     query.pop("type")
     page_image_url = page.url.with_query(query)
@@ -52,7 +51,8 @@ async def download_page_image(page: EpisodePage, context: AppContext) -> Episode
         async for chunk in response.content.iter_chunked(IMAGE_DOWNLOAD_CHUNK_SIZE):
             await destination_handle.write(chunk)
 
-    return replace(page, path=destination)
+    page.path = destination
+    return page
 
 
 async def download_episode(episode: Episode, context: AppContext) -> list[EpisodePage]:
