@@ -428,6 +428,7 @@ dependencies = [
     { name = "aiohttp" },
     { name = "aiopath" },
     { name = "beautifulsoup4" },
+    { name = "yarl" },
 ]
 
 [package.metadata]
@@ -435,6 +436,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.2" },
     { name = "aiopath", specifier = ">=0.7.7" },
     { name = "beautifulsoup4", specifier = ">=4.14.2" },
+    { name = "yarl", specifier = ">=1.22.0" },
 ]
 
 [[package]]
