@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from aiopath import AsyncPath
 from yarl import URL
 
 
@@ -24,7 +25,7 @@ class Episode:
 
 @dataclass(frozen=True)
 class EpisodePage:
-    url: URL
     episode: Episode
     index: int
-
+    url: URL
+    path: AsyncPath | None = field(default=None)
