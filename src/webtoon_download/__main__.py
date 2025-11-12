@@ -1,11 +1,9 @@
 import asyncio
-from collections.abc import tuple_iterator
 from contextlib import AsyncExitStack
 from tempfile import TemporaryDirectory
 
 import aiohttp
 from aiopath import AsyncPath
-from yarl import URL
 
 from webtoon_download.context import AppContext
 from webtoon_download.get_episode_images import get_episode_page_images
