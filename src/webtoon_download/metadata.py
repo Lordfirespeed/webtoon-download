@@ -19,7 +19,6 @@ class Series:
 class Episode:
     series: Series
     index: int
-    title: str | None = field(default=None)
 
     @property
     def indirect_url(self):
