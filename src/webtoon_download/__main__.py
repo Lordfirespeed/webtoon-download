@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import tuple_iterator
 from contextlib import AsyncExitStack
 from tempfile import TemporaryDirectory
 
@@ -8,6 +9,7 @@ from yarl import URL
 
 from webtoon_download.context import AppContext
 from webtoon_download.get_episode_images import get_episode_page_images
+from webtoon_download.metadata import Episode, Series
 
 
 async def main():
@@ -19,8 +21,9 @@ async def main():
         ephemeral_dir = AsyncPath(stack.enter_context(TemporaryDirectory()))
         context = AppContext(session=session, ephemeral_dir=ephemeral_dir)
 
-        episode_url = URL("https://www.webtoons.com/en/romance/my-bias-gets-on-the-last-train/episode-40/viewer?title_no=7857&episode_no=40")
-        episode_images = await get_episode_page_images(episode_url, context)
+        series = Series(title_no=7857)
+        episode = Episode(series=series, index=40)
+        episode_images = await get_episode_page_images(episode, context)
         print(episode_images)
 
         await asyncio.sleep(20)

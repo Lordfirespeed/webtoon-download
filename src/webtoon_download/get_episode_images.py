@@ -6,21 +6,21 @@ from yarl import URL
 from bs4 import BeautifulSoup
 
 from webtoon_download.context import AppContext
-
+from webtoon_download.metadata import Episode
 
 IMAGE_DOWNLOAD_CHUNK_SIZE = 1024 ** 2  # 1 MiB
 
 
-async def get_episode_html(episode_url: URL, context: AppContext) -> str:
-    response = await context.session.get(episode_url)
+async def get_episode_html(episode: Episode, context: AppContext) -> str:
+    response = await context.session.get(episode.indirect_url)
     if not response.ok:
         raise Exception("response not ok")
     body = await response.text()
     return body
 
 
-async def get_episode_soup(episode_url: URL, context: AppContext) -> BeautifulSoup:
-    html = await get_episode_html(episode_url, context)
+async def get_episode_soup(episode: Episode, context: AppContext) -> BeautifulSoup:
+    html = await get_episode_html(episode, context)
     soup = BeautifulSoup(html)
     return soup
 
@@ -47,8 +47,8 @@ async def get_page_image(page_image_url: URL, context: AppContext) -> AsyncPath:
     return destination
 
 
-async def get_episode_page_images(episode_url: URL, context: AppContext) -> list[AsyncPath]:
-    soup = await get_episode_soup(episode_url, context)
+async def get_episode_page_images(episode: Episode, context: AppContext) -> list[AsyncPath]:
+    soup = await get_episode_soup(episode, context)
     image_urls = extract_episode_page_image_urls(soup)
     async with asyncio.TaskGroup() as tg:
         image_tasks = [tg.create_task(get_page_image(image_url, context)) for image_url in image_urls]
