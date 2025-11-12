@@ -57,7 +57,13 @@ async def download_page_image(page: EpisodePage, context: AppContext) -> Episode
 
 async def download_episode(episode: Episode, context: AppContext) -> list[EpisodePage]:
     soup = await get_episode_soup(episode, context)
-    pages = extract_episode_pages(episode, soup)
-    async with asyncio.TaskGroup() as tg:
-        page_download_tasks = [tg.create_task(download_page_image(image_url, context)) for image_url in pages]
-    return [await image_task for image_task in page_download_tasks]
+    extracted_pages = extract_episode_pages(episode, soup)
+
+    page_download_tasks = [asyncio.create_task(download_page_image(image_url, context)) for image_url in extracted_pages]
+    pages = []
+    async for page_download_task in asyncio.as_completed(page_download_tasks):
+        page = await page_download_task
+        print(f"downloaded page {page.index}")
+        pages.append(page)
+
+    return pages
