@@ -19,7 +19,7 @@ async def get_episode_html(episode: Episode, context: AppContext) -> str:
 
 async def get_episode_soup(episode: Episode, context: AppContext) -> BeautifulSoup:
     html = await get_episode_html(episode, context)
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html, features="html.parser")
     return soup
 
 
