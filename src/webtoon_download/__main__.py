@@ -19,7 +19,7 @@ async def main():
         ephemeral_dir = AsyncPath(stack.enter_context(TemporaryDirectory()))
         context = AppContext(session=session, ephemeral_dir=ephemeral_dir)
 
-        series = Series(title_no=7857)
+        series = await Series.get_populated_series(7857, context)
         episode = Episode(series=series, index=40)
         pages = await download_episode(episode, context)
         print(pages)
