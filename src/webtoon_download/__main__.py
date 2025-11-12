@@ -6,7 +6,7 @@ import aiohttp
 from aiopath import AsyncPath
 
 from webtoon_download.context import AppContext
-from webtoon_download.get_episode_images import get_episode_page_images
+from webtoon_download.get_episode_images import download_episode
 from webtoon_download.metadata import Episode, Series
 
 
@@ -21,8 +21,8 @@ async def main():
 
         series = Series(title_no=7857)
         episode = Episode(series=series, index=40)
-        episode_images = await get_episode_page_images(episode, context)
-        print(episode_images)
+        pages = await download_episode(episode, context)
+        print(pages)
 
         await asyncio.sleep(20)
 
