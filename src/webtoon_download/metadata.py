@@ -13,6 +13,7 @@ class Series:
     title: str
     slug: str
     base_url: URL
+    free_episode_count: int
 
     @property
     def list_url(self) -> URL:
@@ -29,7 +30,12 @@ class Series:
         soup = BeautifulSoup(body, features="html.parser")
         title_raw = soup.find("title").text
         title = title_raw[:title_raw.rindex("|")].strip()
-        return cls(title_no=title_no, title=title, slug=base_url.name, base_url=base_url)
+
+        episode_list_tag = soup.find(name="ul", id="_listUl")
+        most_recent_free_episode_tag = episode_list_tag.find()
+        free_episode_count = int(most_recent_free_episode_tag.attrs["data-episode-no"])
+
+        return cls(title_no=title_no, title=title, slug=base_url.name, base_url=base_url, free_episode_count=free_episode_count)
 
 
 @dataclass
