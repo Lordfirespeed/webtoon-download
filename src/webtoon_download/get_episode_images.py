@@ -2,7 +2,6 @@ import asyncio
 
 from aiopath import AsyncPath
 from yarl import URL
-from bs4 import BeautifulSoup
 
 from webtoon_download.context import AppContext
 from webtoon_download.metadata import Episode, EpisodePage
@@ -15,7 +14,7 @@ def extract_episode_pages(episode: Episode) -> list[EpisodePage]:
     image_children = image_list_tag.find_all(name="img")
 
     return [
-        EpisodePage(episode, page_index, URL(image_tag.attrs["data-url"]))
+        EpisodePage.of(episode, page_index, URL(image_tag.attrs["data-url"]))
         for page_index, image_tag in enumerate(image_children, start=1)
     ]
 
@@ -26,7 +25,7 @@ async def download_page_image(page: EpisodePage, destination_dir: AsyncPath, con
 
     assert page.episode.series.slug
 
-    destination_file = destination_dir / f"{page.episode.series.slug}-ep{page.episode.episode_index:03}-page{page.index:03}{page.url.suffix}"
+    destination_file = destination_dir / f"{page.episode.series.slug}-ep{page.episode.episode_index:03}-page{page.page_index:03}{page.url.suffix}"
     query = dict(page.url.query)
     query.pop("type")
     page_image_url = page.url.with_query(query)
@@ -51,7 +50,7 @@ async def download_episode(episode: Episode, destination: AsyncPath, context: Ap
     pages = []
     async for page_download_task in asyncio.as_completed(page_download_tasks):
         page = await page_download_task
-        print(f"downloaded page {page.index}")
+        print(f"downloaded page {page.page_index}")
         pages.append(page)
 
     return pages

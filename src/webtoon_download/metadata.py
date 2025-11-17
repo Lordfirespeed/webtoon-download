@@ -86,8 +86,8 @@ class EpisodeIdentifier:
         return URL(f"https://www.webtoons.com/en/genre/series/episode/viewer?title_no={self.series_title_no}&episode_no={self.episode_index}")
 
     @classmethod
-    def of(cls, series: Series | SeriesIdentifier, episode_index: int) -> Self:
-        return cls(series.title_no, episode_index)
+    def of(cls, series: Series | SeriesIdentifier, with_episode_index: int) -> Self:
+        return cls(series.title_no, with_episode_index)
 
 
 @dataclass
@@ -146,7 +146,16 @@ class Episode:
 
 @dataclass
 class EpisodePage:
-    episode: Episode
-    index: int
+    series_title_no: int
+    episode_index: int
+    page_index: int
     url: URL
     path: AsyncPath | None = field(default=None)
+
+    @classmethod
+    def of(cls, episode: Episode | EpisodeIdentifier, with_page_index: int, with_url: URL) -> Self:
+        return cls(episode.series_title_no, episode.episode_index, with_page_index, with_url)
+
+    @property
+    def episode(self):
+        return Episode.get_cached(EpisodeIdentifier(self.series_title_no, self.episode_index))
