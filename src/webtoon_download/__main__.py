@@ -9,6 +9,7 @@ from webtoon_download.config.series import load_all_series_config
 from webtoon_download.context import AppContext
 from webtoon_download.get_episode_images import download_episode
 from webtoon_download.metadata import Episode, Series
+from webtoon_download.util.async_interrupt import create_interrupt_future
 
 
 async def main():
@@ -26,7 +27,8 @@ async def main():
         episode = Episode(series=series, index=40)
         pages = await download_episode(episode, context)
 
-        await asyncio.sleep(20)
+        print("got all the pages!")
+        await create_interrupt_future()
 
 if __name__ == "__main__":
     asyncio.run(main())
