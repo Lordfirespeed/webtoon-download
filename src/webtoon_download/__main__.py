@@ -23,9 +23,9 @@ async def main():
         ephemeral_dir = AsyncPath(stack.enter_context(TemporaryDirectory()))
         context = AppContext(session=session, ephemeral_dir=ephemeral_dir, all_series_config=all_series_config)
 
-        series = await Series.get_populated_series(7857, context)
+        series = await Series.fetch_populated_series(7857, context)
         episode = Episode(series=series, index=40)
-        pages = await download_episode(episode, ephemeral_dir/"ep-40", context)
+        pages = await download_episode(episode, ephemeral_dir/series.slug/"", context)
 
         print(f"got all the pages! look in: {context.ephemeral_dir}")
         await create_interrupt_future()
