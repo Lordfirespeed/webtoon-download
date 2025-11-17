@@ -7,7 +7,7 @@ from aiopath import AsyncPath
 
 from webtoon_download.config.series import load_all_series_config
 from webtoon_download.context import AppContext
-from webtoon_download.get_episode_images import download_episode
+from webtoon_download.download_episode import download_episode
 from webtoon_download.metadata import Episode, Series, SeriesIdentifier, EpisodeIdentifier
 from webtoon_download.util.async_interrupt import create_interrupt_future
 
