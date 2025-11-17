@@ -21,10 +21,10 @@ async def work_on_download_queue(queue: asyncio.Queue[Episode], context: AppCont
             await download_episode(episode, destination, context)
         except FileExistsError:
             queue.task_done()
-            print(f"")
+            print(f"Skipping download for {episode.subpath}, its directory already exists, assuming already downloaded")
             continue
 
-        print(f"got all the pages! look in: {context.ephemeral_dir}")
+        print(f"Download for {episode.subpath} is complete, see it at {destination}")
         queue.task_done()
 
 
