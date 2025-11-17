@@ -25,9 +25,9 @@ async def main():
 
         series = await Series.get_populated_series(7857, context)
         episode = Episode(series=series, index=40)
-        pages = await download_episode(episode, context)
+        pages = await download_episode(episode, ephemeral_dir/"ep-40", context)
 
-        print("got all the pages!")
+        print(f"got all the pages! look in: {context.ephemeral_dir}")
         await create_interrupt_future()
 
 if __name__ == "__main__":

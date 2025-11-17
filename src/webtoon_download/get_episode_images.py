@@ -1,5 +1,6 @@
 import asyncio
 
+from aiopath import AsyncPath
 from yarl import URL
 from bs4 import BeautifulSoup
 
@@ -33,13 +34,13 @@ def extract_episode_pages(episode: Episode, episode_soup: BeautifulSoup) -> list
     ]
 
 
-async def download_page_image(page: EpisodePage, context: AppContext) -> EpisodePage:
+async def download_page_image(page: EpisodePage, destination_dir: AsyncPath, context: AppContext) -> EpisodePage:
     if page.path is not None and await page.path.exists():
         return page
 
     assert page.episode.series.slug
 
-    destination = context.ephemeral_dir / f"{page.episode.series.slug}-ep{page.episode.index:03}-page{page.index:03}{page.url.suffix}"
+    destination_file = destination_dir / f"{page.episode.series.slug}-ep{page.episode.index:03}-page{page.index:03}{page.url.suffix}"
     query = dict(page.url.query)
     query.pop("type")
     page_image_url = page.url.with_query(query)
@@ -47,19 +48,21 @@ async def download_page_image(page: EpisodePage, context: AppContext) -> Episode
     if not response.ok:
         raise Exception("response not ok")
 
-    async with destination.open(mode="wb") as destination_handle:
+    async with destination_file.open(mode="wb") as destination_handle:
         async for chunk in response.content.iter_chunked(IMAGE_DOWNLOAD_CHUNK_SIZE):
             await destination_handle.write(chunk)
 
-    page.path = destination
+    page.path = destination_file
     return page
 
 
-async def download_episode(episode: Episode, context: AppContext) -> list[EpisodePage]:
+async def download_episode(episode: Episode, destination: AsyncPath, context: AppContext) -> list[EpisodePage]:
     soup = await get_episode_soup(episode, context)
     extracted_pages = extract_episode_pages(episode, soup)
 
-    page_download_tasks = [asyncio.create_task(download_page_image(image_url, context)) for image_url in extracted_pages]
+    await destination.mkdir(parents=True)  # if the destination directory already exists, this will throw (intended)
+
+    page_download_tasks = [asyncio.create_task(download_page_image(image_url, destination, context)) for image_url in extracted_pages]
     pages = []
     async for page_download_task in asyncio.as_completed(page_download_tasks):
         page = await page_download_task
