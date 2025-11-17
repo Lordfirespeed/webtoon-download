@@ -104,7 +104,7 @@ class Episode:
         return (self.base_url / f"viewer").with_query({"title_no": self.series_title_no, "episode_no": self.episode_index})
 
     @property
-    def series(self):
+    def series(self) -> Series:
         return Series.get_cached(SeriesIdentifier(self.series_title_no))
 
     @cached_property
@@ -161,5 +161,5 @@ class EpisodePage:
         return cls(episode.series_title_no, episode.episode_index, with_page_index, with_url)
 
     @property
-    def episode(self):
+    def episode(self) -> Episode:
         return Episode.get_cached(EpisodeIdentifier(self.series_title_no, self.episode_index))
