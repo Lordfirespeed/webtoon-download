@@ -114,7 +114,7 @@ class Episode:
         return title
 
     @cached_property
-    def slug(self) -> str:
+    def webtoon_slug(self) -> str:
         return self.base_url.name
 
     @classmethod
