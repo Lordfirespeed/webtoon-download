@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 import aiohttp
 from aiopath import AsyncPath
 
+from webtoon_download.config.series import load_all_series_config
 from webtoon_download.context import AppContext
 from webtoon_download.get_episode_images import download_episode
 from webtoon_download.metadata import Episode, Series
@@ -14,15 +15,16 @@ async def main():
     async with AsyncExitStack() as stack:
         async with asyncio.TaskGroup() as tg:
             session_task = tg.create_task(stack.enter_async_context(aiohttp.ClientSession()))
+            all_series_config_task = tg.create_task(load_all_series_config())
 
         session = await session_task
+        all_series_config = await all_series_config_task
         ephemeral_dir = AsyncPath(stack.enter_context(TemporaryDirectory()))
-        context = AppContext(session=session, ephemeral_dir=ephemeral_dir)
+        context = AppContext(session=session, ephemeral_dir=ephemeral_dir, all_series_config=all_series_config)
 
         series = await Series.get_populated_series(7857, context)
         episode = Episode(series=series, index=40)
         pages = await download_episode(episode, context)
-        print(pages)
 
         await asyncio.sleep(20)
 
