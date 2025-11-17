@@ -17,6 +17,7 @@ def create_interrupt_future(
         if interrupted.done():
             return
         interrupted.set_result(None)
+        print()  # so that the '^C' in a terminal will be on its own line
 
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
