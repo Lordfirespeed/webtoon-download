@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Self
+from functools import cached_property
+from typing import ClassVar, Self
 
 from aiopath import AsyncPath
 from bs4 import BeautifulSoup
@@ -8,57 +9,73 @@ from yarl import URL
 from webtoon_download.context import AppContext
 
 
+@dataclass(frozen=True)
+class SeriesIdentifier:
+    title_no: int
+
+    @property
+    def indirect_url(self):
+        return URL(f"https://www.webtoons.com/en/genre/series/list?title_no={self.title_no}")
+
+
 @dataclass
 class Series:
+    _instance_cache: ClassVar[dict[SeriesIdentifier, Self]] = {}
+
     title_no: int
-    title: str
-    slug: str
     base_url: URL
-    free_episode_count: int
+    list_soup: BeautifulSoup
 
     @property
     def list_url(self) -> URL:
         return (self.base_url / f"list").with_query({"title_no": self.title_no})
 
+    @cached_property
+    def title(self) -> str:
+        title_raw = self.list_soup.find("title").text
+        title = title_raw[:title_raw.rindex("|")].strip()
+        return title
+
+    @cached_property
+    def slug(self) -> str:
+        return self.base_url.name
+
+    @cached_property
+    def free_episode_count(self) -> int:
+        episode_list_tag = self.list_soup.find(name="ul", id="_listUl")
+        most_recent_free_episode_tag = episode_list_tag.find()
+        return int(most_recent_free_episode_tag.attrs["data-episode-no"])
+
     @classmethod
-    async def fetch_populated_series(cls, title_no: int, context: AppContext) -> Self:
-        indirect_url = URL(f"https://www.webtoons.com/en/genre/series/list?title_no={title_no}")
-        response = await context.session.get(indirect_url)
+    async def fetch_populated_series(cls, series_id: SeriesIdentifier, context: AppContext) -> Self:
+        response = await context.session.get(series_id.indirect_url)
         if not response.ok:
             raise Exception("response not ok")
         body = await response.text()
         soup = BeautifulSoup(body, features="html.parser")
-        return cls.scrape_populated_series(response.url, soup)
+        return cls.make_cached(series_id, response.url, soup)
 
     @classmethod
-    def scrape_populated_series(cls, list_url: URL, list_soup: BeautifulSoup) -> Self:
-        title_no = list_url.query.get("title_no", None)
-        if title_no is None:
-            raise Exception("list_url should have a title_no query parameter")
-        title_no = int(title_no)
-
+    def make_cached(cls, series_id: SeriesIdentifier, list_url: URL, list_soup: BeautifulSoup) -> Self:
         base_url = list_url.parent
 
-        title_raw = list_soup.find("title").text
-        title = title_raw[:title_raw.rindex("|")].strip()
-
-        episode_list_tag = list_soup.find(name="ul", id="_listUl")
-        most_recent_free_episode_tag = episode_list_tag.find()
-        free_episode_count = int(most_recent_free_episode_tag.attrs["data-episode-no"])
-
-        return cls(
-            title_no=title_no,
-            title=title,
-            slug=base_url.name,
+        series = cls(
+            title_no=series_id.title_no,
             base_url=base_url,
-            free_episode_count=free_episode_count,
+            list_soup=list_soup,
         )
+        cls._instance_cache[series_id] = series
+        return series
+
+    @classmethod
+    def get_cached(cls, series_id: SeriesIdentifier) -> Self:
+        return cls._instance_cache[series_id]
 
 
-@dataclass
-class Episode:
-    series: Series
-    index: int
+@dataclass(frozen=True, slots=True)
+class EpisodeIdentifier:
+    series_title_no: int
+    episode_index: int
 
     @property
     def indirect_url(self):
@@ -66,7 +83,65 @@ class Episode:
         # It uses the (series) title_no and episode_no query parameters to identify the episode, then redirects you to
         # the canonical URL for the viewer for that episode
         # (e.g. ``/en/romance/fae-trapped/ep-1-the-banished-fae/viewer?title_no=8904&episode_no=1``)
-        return URL(f"https://www.webtoons.com/en/genre/series/episode/viewer?title_no={self.series.title_no}&episode_no={self.index}")
+        return URL(f"https://www.webtoons.com/en/genre/series/episode/viewer?title_no={self.series_title_no}&episode_no={self.episode_index}")
+
+    @classmethod
+    def of(cls, series: Series | SeriesIdentifier, episode_index: int) -> Self:
+        return cls(series.title_no, episode_index)
+
+
+@dataclass
+class Episode:
+    _instance_cache: ClassVar[dict[EpisodeIdentifier, Self]] = {}
+
+    series_title_no: int
+    episode_index: int
+    base_url: URL
+    viewer_soup: BeautifulSoup
+
+    @property
+    def viewer_url(self) -> URL:
+        return (self.base_url / f"viewer").with_query({"title_no": self.series_title_no, "episode_no": self.episode_index})
+
+    @property
+    def series(self):
+        return Series.get_cached(SeriesIdentifier(self.series_title_no))
+
+    @cached_property
+    def title(self) -> str:
+        title_raw = self.viewer_soup.find("title").text
+        title = title_raw[:title_raw.rindex("|")].strip()
+        return title
+
+    @cached_property
+    def slug(self) -> str:
+        return self.base_url.name
+
+    @classmethod
+    async def fetch_populated_episode(cls, episode_id: EpisodeIdentifier, context: AppContext) -> Self:
+        response = await context.session.get(episode_id.indirect_url)
+        if not response.ok:
+            raise Exception("response not ok")
+        body = await response.text()
+        soup = BeautifulSoup(body, features="html.parser")
+        return cls.make_cached(episode_id, response.url, soup)
+
+    @classmethod
+    def make_cached(cls, episode_id: EpisodeIdentifier, viewer_url: URL, viewer_soup: BeautifulSoup) -> Self:
+        base_url = viewer_url.parent
+
+        episode = cls(
+            series_title_no=episode_id.series_title_no,
+            episode_index=episode_id.episode_index,
+            base_url=base_url,
+            viewer_soup=viewer_soup,
+        )
+        cls._instance_cache[episode_id] = episode
+        return episode
+
+    @classmethod
+    def get_cached(cls, episode_id: EpisodeIdentifier) -> Self:
+        return cls._instance_cache[episode_id]
 
 
 @dataclass

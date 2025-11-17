@@ -10,22 +10,8 @@ from webtoon_download.metadata import Episode, EpisodePage
 IMAGE_DOWNLOAD_CHUNK_SIZE = 1024 ** 2  # 1 MiB
 
 
-async def get_episode_html(episode: Episode, context: AppContext) -> str:
-    response = await context.session.get(episode.indirect_url)
-    if not response.ok:
-        raise Exception("response not ok")
-    body = await response.text()
-    return body
-
-
-async def get_episode_soup(episode: Episode, context: AppContext) -> BeautifulSoup:
-    html = await get_episode_html(episode, context)
-    soup = BeautifulSoup(html, features="html.parser")
-    return soup
-
-
-def extract_episode_pages(episode: Episode, episode_soup: BeautifulSoup) -> list[EpisodePage]:
-    image_list_tag = episode_soup.find(id="_imageList")
+def extract_episode_pages(episode: Episode) -> list[EpisodePage]:
+    image_list_tag = episode.viewer_soup.find(id="_imageList")
     image_children = image_list_tag.find_all(name="img")
 
     return [
@@ -40,7 +26,7 @@ async def download_page_image(page: EpisodePage, destination_dir: AsyncPath, con
 
     assert page.episode.series.slug
 
-    destination_file = destination_dir / f"{page.episode.series.slug}-ep{page.episode.index:03}-page{page.index:03}{page.url.suffix}"
+    destination_file = destination_dir / f"{page.episode.series.slug}-ep{page.episode.episode_index:03}-page{page.index:03}{page.url.suffix}"
     query = dict(page.url.query)
     query.pop("type")
     page_image_url = page.url.with_query(query)
@@ -57,8 +43,7 @@ async def download_page_image(page: EpisodePage, destination_dir: AsyncPath, con
 
 
 async def download_episode(episode: Episode, destination: AsyncPath, context: AppContext) -> list[EpisodePage]:
-    soup = await get_episode_soup(episode, context)
-    extracted_pages = extract_episode_pages(episode, soup)
+    extracted_pages = extract_episode_pages(episode)
 
     await destination.mkdir(parents=True)  # if the destination directory already exists, this will throw (intended)
 
