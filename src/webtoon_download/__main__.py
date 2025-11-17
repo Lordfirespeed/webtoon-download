@@ -7,7 +7,7 @@ from aiopath import AsyncPath
 
 from webtoon_download.config.series import load_all_series_config
 from webtoon_download.context import AppContext
-from webtoon_download.download_episode import download_episode
+from webtoon_download.download_queue import get_download_queue
 from webtoon_download.metadata import Episode, Series, SeriesIdentifier, EpisodeIdentifier
 from webtoon_download.util.async_interrupt import create_interrupt_future
 
@@ -23,13 +23,14 @@ async def main():
         ephemeral_dir = AsyncPath(stack.enter_context(TemporaryDirectory()))
         context = AppContext(session=session, ephemeral_dir=ephemeral_dir, all_series_config=all_series_config)
 
+        download_queue = await stack.enter_async_context(get_download_queue(context))
+
         series_id = SeriesIdentifier(7857)
         series = await Series.fetch_populated_series(series_id, context)
         episode_id = EpisodeIdentifier.of(series, 40)
         episode = await Episode.fetch_populated_episode(episode_id, context)
-        pages = await download_episode(episode, ephemeral_dir/series.slug/episode.slug, context)
 
-        print(f"got all the pages! look in: {context.ephemeral_dir}")
+        await download_queue.put(episode)
         await create_interrupt_future()
 
 if __name__ == "__main__":
