@@ -45,6 +45,10 @@ class Episode:
 
     @property
     def indirect_url(self):
+        # WEBTOON doesn't care about the path, as long as it contains the right number of fragments.
+        # It uses the (series) title_no and episode_no query parameters to identify the episode, then redirects you to
+        # the canonical URL for the viewer for that episode
+        # (e.g. ``/en/romance/fae-trapped/ep-1-the-banished-fae/viewer?title_no=8904&episode_no=1``)
         return URL(f"https://www.webtoons.com/en/genre/series/episode/viewer?title_no={self.series.title_no}&episode_no={self.index}")
 
 
