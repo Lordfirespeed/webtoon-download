@@ -9,7 +9,7 @@ from webtoon_download.metadata import Episode, EpisodePage
 IMAGE_DOWNLOAD_CHUNK_SIZE = 1024 ** 2  # 1 MiB
 
 
-def extract_episode_pages(episode: Episode) -> list[EpisodePage]:
+def scrape_episode_pages(episode: Episode) -> list[EpisodePage]:
     image_list_tag = episode.viewer_soup.find(id="_imageList")
     image_children = image_list_tag.find_all(name="img")
 
@@ -42,7 +42,7 @@ async def download_page_image(page: EpisodePage, destination_dir: AsyncPath, con
 
 
 async def download_episode(episode: Episode, destination: AsyncPath, context: AppContext) -> list[EpisodePage]:
-    extracted_pages = extract_episode_pages(episode)
+    extracted_pages = scrape_episode_pages(episode)
 
     await destination.mkdir(parents=True)  # if the destination directory already exists, this will throw (intended)
 
