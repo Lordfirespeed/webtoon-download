@@ -16,7 +16,7 @@ async def work_on_download_queue(queue: asyncio.Queue[Episode], context: AppCont
         except QueueShutDown:
             return
 
-        destination = context.ephemeral_dir / episode.subpath
+        destination = context.ephemeral_dir / episode.series.slug / "Volume 01" / f"Chapter {episode.episode_index}:03"
         try:
             await download_episode(episode, destination, context)
         except FileExistsError:
