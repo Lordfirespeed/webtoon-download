@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import aiohttp
 from aiopath import AsyncPath
 
+from webtoon_download.config.downloader import DownloaderConfig
 from webtoon_download.config.series import SeriesConfig
 
 
@@ -10,6 +11,7 @@ from webtoon_download.config.series import SeriesConfig
 class AppContext:
     session: aiohttp.ClientSession
     ephemeral_dir: AsyncPath
+    downloader_config: DownloaderConfig
     all_series_config: list[SeriesConfig]
 
 
