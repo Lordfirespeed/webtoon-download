@@ -117,6 +117,10 @@ class Episode:
     def webtoon_slug(self) -> str:
         return self.base_url.name
 
+    @property
+    def slug(self) -> str:
+        return f"ep{self.episode_index:03}"
+
     @classmethod
     async def fetch_populated_episode(cls, episode_id: EpisodeIdentifier, context: AppContext) -> Self:
         response = await context.session.get(episode_id.indirect_url)
