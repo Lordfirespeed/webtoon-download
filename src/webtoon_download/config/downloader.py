@@ -1,21 +1,9 @@
-import asyncio
-from pathlib import Path
 import tomllib
-from typing import Annotated
 
-from aiopath import AsyncPath
-from pydantic import (
-    BaseModel, AfterValidator,
-)
+from pydantic import BaseModel
 
+from webtoon_download.util.pydantic_aiopath import PydanticAsyncPath
 from .paths import config_root_dir
-
-
-def path_to_async_path(value: Path) -> AsyncPath:
-    return AsyncPath(value)
-
-
-type PydanticAsyncPath = Annotated[AsyncPath, AfterValidator(path_to_async_path)]
 
 
 class DownloaderConfig(BaseModel):
