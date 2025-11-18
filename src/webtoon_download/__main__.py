@@ -33,12 +33,14 @@ async def main():
 
         download_queue = await stack.enter_async_context(get_download_queue(context))
 
-        series_id = SeriesIdentifier(7857)
-        series = await Series.fetch_populated_series(series_id, context)
-        episode_id = EpisodeIdentifier.of(series, 40)
-        episode = await Episode.fetch_populated_episode(episode_id, context)
+        for series_config in context.all_series_config:
+            series_id = SeriesIdentifier(series_config.title_no)
+            series = await Series.fetch_populated_series(series_id, context)
+            for episode_index in range(1, series.free_episode_count + 1):
+                episode_id = EpisodeIdentifier.of(series, episode_index)
+                episode = await Episode.fetch_populated_episode(episode_id, context)
+                await download_queue.put(episode)
 
-        await download_queue.put(episode)
         await create_interrupt_future()
 
 if __name__ == "__main__":
